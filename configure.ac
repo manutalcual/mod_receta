@@ -5,7 +5,16 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_CONFIG_HEADER([config.h:config.in])
-AC_CONFIG_SRCDIR([src/main.c])
+AC_CONFIG_SRCDIR([src/mod_receta.c])
+
+dnl This is here so we can set $subdirs directly based on configure fragments.
+AC_CONFIG_SUBDIRS()
+
+AC_CANONICAL_HOST
+
+if test "`cd $srcdir; /bin/pwd`" = "`/bin/pwd`"; then
+  AC_MSG_ERROR([you must configure in a separate build directory])
+fi
 
 dnl Checks for programs.
 dnl AC_PROG_CXX
