@@ -2,6 +2,7 @@ dnl Standard configure.ac
 AC_PREREQ(2.53)
 AC_INIT([mod_receta], [0.1.0], [manutalcual@gmail.com])
 AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_CONFIG_HEADER([config.h:config.in])
 AC_CONFIG_SRCDIR([src/main.c])
