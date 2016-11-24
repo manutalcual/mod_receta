@@ -3,7 +3,7 @@
 // Autor: Manuel Cano Muñoz
 // Fecha: Wed Nov 16 20:18:05 2011
 
-// Time-stamp: <2011-11-17 20:51:20 manuel>
+// Time-stamp: <2012-01-13 20:30:01 manuel>
 //
 //
 //   This program is free software; you can redistribute it and/or modify
@@ -28,32 +28,29 @@
 
 int my_init (sql_t * obj)
 {
-    MYSQL_RES * res = NULL;
-    MYSQL_ROW row;
-    int nf = 0; /* num fields */
-    int nr = 0; /* num rows */
-    int r = 0; /* row index */
-    int f = 0; /* field index */
-
-    logp ("Llamada la funcion 'init' %x.", obj);
-
     mysql_init (&obj->my_sql);
+
+    logp ("Trying to connect: user, %s; pwd, %s; db, %s",
+	  obj->dbuser,
+	  obj->dbpwd,
+	  obj->database);
 
     /* mysql_options (&mysql, MYSQL_READ_DEFAULT_GROUP, "apache2"); */
     if (! mysql_real_connect(&obj->my_sql,
 			     "localhost",
-			     "md",
-			     "c0ntr4sen14",
-			     "md",
+			     obj->dbuser,
+			     obj->dbpwd,
+			     obj->database,
 			     0,
 			     NULL,
 			     0))
     {
 	logp ("Failed to connect to database: Error: %s\n",
 	      mysql_error(&obj->my_sql));
-	return 0;
+	return -1;
     }
 
+#if 0
     if (mysql_query(&obj->my_sql,
 		    "select * from recipes"))
     {
@@ -92,9 +89,103 @@ int my_init (sql_t * obj)
 	    ap_rprintf (rct_request_req, "\n");
 	}
     }
+    
+    ap_rprintf (rct_request_req, "\n\n");
 
-end:
-    mysql_close (&obj->my_sql);
+    ap_rprintf (rct_request_req,
+		"Path info: %s.\n",
+		rct_request_req->path_info);
+
+    FILE * file = popen("ls -lh", "r");
+
+    while (!feof(file)) {
+	char ch[256];
+	int r = 0;
+
+	r = fread(ch, 1, 254, file);
+	ch[r - 1] = '\0';
+	logp ("Readed: %d\n", r);
+	ap_rprintf (rct_request_req, "%s", ch);
+    }
+
+    pclose (file);
+#endif
+    return 0;
+}
+
+int my_query (sql_t * obj, const char * query)
+{
+    return (mysql_query(&obj->my_sql,
+			query) != 0) ? -1 : 0;
+}
+
+int my_get_results (sql_t * obj)
+{
+    obj->res = mysql_store_result(&obj->my_sql);
+
+    if (! obj->res) {
+	logp ("La consulta no tiene datos.");
+	goto err_get_results;
+    }
+
+    obj->num_fields = mysql_num_fields(obj->res);
+
+    if (obj->num_fields <= 0) {
+	logp ("Numfields ha devuelto < 0!!!");
+	goto err_get_results;
+    }
+
+    my_get_fields (obj);
+
+    obj->num_rows = mysql_num_rows(obj->res);
+
+    if (obj->num_rows <= 0) {
+	logp ("Numrows ha devuelto < 0!!!");
+	goto err_get_results;
+    }
+
+    obj->cur_row = 0;
+
+    return obj->num_rows;
+
+err_get_results:
+    return -1;
+}
+
+/**
+ * This function is called by md_get_results, so no need to call it
+ * from your main program.
+ *
+ */
+int my_get_fields (sql_t * obj)
+{
+    obj->fields = mysql_fetch_fields(obj->res);
 
     return 0;
+}
+
+int my_get_next_row (sql_t * obj)
+{
+    if (! obj->res) {
+	logp ("no hay objeto recurso");
+	return -1;
+    }
+
+    obj->row = mysql_fetch_row(obj->res);
+    if (++obj->cur_row > obj->num_rows) {
+	mysql_free_result (obj->res);
+	obj->res = 0;
+	return -1;
+    }
+
+    return 0;
+}
+
+int my_close (sql_t * obj)
+{
+    mysql_close (&obj->my_sql);
+
+    memset (obj, 0, sizeof(sql_t));
+
+    return -1;
 }

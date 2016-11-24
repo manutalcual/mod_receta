@@ -7,26 +7,36 @@ AM_INIT_AUTOMAKE([dist-bzip2])
 AM_CONFIG_HEADER([config.h:config.in])
 AC_CONFIG_SRCDIR([src/mod_receta.c])
 
+if test "`cd $srcdir; /bin/pwd`" = "`/bin/pwd`"; then
+  AC_MSG_ERROR([you must configure in a separate build directory])
+fi
+
 dnl This is here so we can set $subdirs directly based on configure fragments.
 AC_CONFIG_SUBDIRS()
 
 AC_CANONICAL_HOST
 
-if test "`cd $srcdir; /bin/pwd`" = "`/bin/pwd`"; then
-  AC_MSG_ERROR([you must configure in a separate build directory])
-fi
-
 dnl Checks for programs.
 dnl AC_PROG_CXX
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
+
+CPPFLAGS=""
+CXXFLAGS=""
+CFLAGS=""
+LDFLAGS=""
+AM_CPPFLAGS=""
+AM_CFLAGS=""
+AM_CXXFLAGS=""
+AM_LDFLAGS=""
 
 # Define a macro that is used to parse a --with-apache parameter
 # The macro is named "APACHE_DIR"
 AC_DEFUN([APACHE_DIR],[
 
-	AC_ARG_WITH(
-		apache,
+        AC_ARG_WITH(
+                apache,
 		[  --with-apache[=DIR]     Apache server directory],
 		,
 		[with_apache="no"]
@@ -40,7 +50,7 @@ AC_DEFUN([APACHE_DIR],[
 		# make sure that a well known include file exists
 		if test -e $with_apache/include/httpd.h; then
 			apache_dir=$with_apache
-			AC_MSG_RESULT(APACHE found!)
+			AC_MSG_RESULT([yes])
 		else
 			AC_MSG_ERROR( $with_apache not found.  Check the value you specified with --with-apache)
 		fi
@@ -50,6 +60,34 @@ AC_DEFUN([APACHE_DIR],[
 
 # Now call the APACHE_DIR macro that was just specified
 APACHE_DIR
+
+# Define a macro that is used to parse a --with-apache parameter
+# The macro is named "APACHE_DIR"
+AC_DEFUN([ENABLE_DEBUG],[
+
+        AC_ARG_ENABLE(
+                debug,
+		[--enable-debug Enable debug],
+		[cv_enable_debug=$enableval],
+		[cv_enable_debug=$enableval]
+	)
+
+	AC_MSG_CHECKING(wether to enable debug output)
+
+	if test "$enable_debug" = "yes"; then
+        	AC_MSG_RESULT([yes])
+	else
+        	AC_MSG_RESULT([no])
+	fi
+
+        AM_CONDITIONAL(DEBUG, [test "$cv_enable_debug" = "yes"])
+
+])
+
+ENABLE_DEBUG
+
+user=`whoami`
+AC_DEFINE_UNQUOTED([FILES_PATH], ["/home/$user/public_html"], [Data files path])
 
 dnl Checks for libraries.
 
